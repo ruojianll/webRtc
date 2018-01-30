@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+</head>
+
+<body>
+    <div id="wrapper" class="centered">
+        <button id="share-my-screen">share my screen</button>
+        <br />
+        <video id="local" width="640" height="360" autoplay style="background: #000;display: inline-block;margin-top: 20px;"></video>
+    </div>
+</body>
+<script>
+    // let constraints = { audio: true, video: true }
+    // function hasGetUserMedia() {
+    //     // Note: Opera builds are unprefixed.
+    //     return !!(navigator.getUserMedia || navigator.webkitGetUserMedia ||
+    //         navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    // }
+    // if (hasGetUserMedia()) {
+    //     navigator.mediaDevices.getUserMedia(constraints)
+    //         .then(function (mediaStream) {
+    //             let url = URL.createObjectURL(mediaStream)
+    //             console.log(url)
+    //             let vedio = document.querySelector('video')
+    //             vedio.src = url
+    //         })
+    //         .catch(function (error) { console.log(error) })
+    // }
+    // var video = document.querySelector('video');
+    //   video.src = window.webkitURL.createObjectURL(localMediaStream);
+    $(function () {
+        function getScreen(sourceId) {
+            var constraints = {
+                mandatory: {
+                    chromeMediaSource: 'desktop',
+                    maxWidth: screen.width > 1920 ? screen.width : 1920,
+                    maxHeight: screen.height > 1080 ? screen.height : 1080,
+                    chromeMediaSourceId: sourceId
+                },
+                optional: [
+                    { googTemporalLayeredScreencast: true }
+                ]
+            };
+            navigator.getUserMedia({ video: constraints },
+                stream => {
+                    let url = URL.createObjectURL(stream)
+                    $('video#local').attr('src', url);
+                },
+                error => {
+                    console.log(error);
+                }
+            );
+        }
+
+        window.addEventListener("message", function (msg) {
+            console.log(msg)
+            if (!msg.data) {
+                return;
+            } else if (msg.data.sourceId) {
+                getScreen(msg.data.sourceId);
+            } else if (msg.data.addonInstalled) {
+                $('#addon-not-found').hide();
+                $('#share-my-screen').removeAttr('disabled');
+            }
+        }, false);
+
+
+        window.postMessage('check-addon-installed', '*')
+
+        $('#share-my-screen').click(function () {
+            window.postMessage('requestScreenSourceId', '*');
+        })
+    });
+</script>
+
+</html>
